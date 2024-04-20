@@ -55,6 +55,15 @@ v2_y = cosd(tar2_angle)*v2_radial;
 v2_x = sind(tar2_angle)*v2_radial;
 r2 = [r2_x r2_y 0];
 
+r3_radial = 25;
+tar3_angle = 30;
+r3_y = cosd(tar3_angle)*r3_radial;
+r3_x = sind(tar3_angle)*r3_radial;
+v3_radial = -15; % velocity 3
+v3_y = cosd(tar3_angle)*v3_radial;
+v3_x = sind(tar3_angle)*v3_radial;
+r3 = [r3_x r3_y 0];
+
 tx_loc = cell(1,numTX);
 for i = 1:numTX
    tx_loc{i} = [(i-1)*d_tx 0 0];
@@ -70,10 +79,16 @@ end
 
 tar1_loc = zeros(length(t),3);
 tar2_loc = zeros(length(t),3);
+tar3_loc = zeros(length(t),3);
+
 tar1_loc(:,1) = r1(1) + v1_x*t;
 tar2_loc(:,1) = r2(1) + v2_x*t;
+tar3_loc(:,1) = r3(1) + v3_x*t;
+
 tar1_loc(:,2) = r1(2) + v1_y*t;
 tar2_loc(:,2) = r2(2) + v2_y*t;
+tar3_loc(:,2) = r3(2) + v3_y*t;
+
 % for i = 1:1000:length(t)
 %     scatter3(tar1_loc(i,1),tar1_loc(i,2),tar1_loc(i,3),'m')
 %     hold on
@@ -84,16 +99,25 @@ tar2_loc(:,2) = r2(2) + v2_y*t;
 
 delays_tar1 = cell(numTX,numRX);
 delays_tar2 = cell(numTX,numRX);
+delays_tar3 = cell(numTX,numRX);
+
 r1_at_t = cell(numTX,numRX);
 r2_at_t = cell(numTX,numRX);
+r3_at_t = cell(numTX,numRX);
+
 tar1_angles = cell(numTX,numRX);
 tar2_angles = cell(numTX,numRX);
+tar3_angles = cell(numTX,numRX);
+
 tar1_velocities = cell(numTX,numRX);
 tar2_velocities = cell(numTX,numRX);
+tar3_velocities = cell(numTX,numRX);
+
 for i = 1:numTX
     for j = 1:numRX
         delays_tar1{i,j} = (vecnorm(tar1_loc-repmat(rx_loc{j},N,1),2,2)+vecnorm(tar1_loc-repmat(tx_loc{i},N,1),2,2))/c; 
         delays_tar2{i,j} = (vecnorm(tar2_loc-repmat(rx_loc{j},N,1),2,2)+vecnorm(tar2_loc-repmat(tx_loc{i},N,1),2,2))/c;
+        delays_tar3{i,j} = (vecnorm(tar3_loc-repmat(rx_loc{j},N,1),2,2)+vecnorm(tar3_loc-repmat(tx_loc{i},N,1),2,2))/c;
 %         r1_at_t{i,j} = vecnorm(tar1_loc-repmat(rx_loc{j},N,1),2,2);
 %         r2_at_t{i,j} = vecnorm(tar2_loc-repmat(rx_loc{j},N,1),2,2);
 %         tar1_angles{i,j} = acosd(r1(2)./r1_at_t{i,j});
@@ -129,12 +153,14 @@ for i = 1:numTX
             phase_t = phase(t_onePulse,fc);
             phase_1 = phase(t_onePulse-delays_tar1{i,j}(k*numADC),fc); % received
             phase_2 = phase(t_onePulse-delays_tar2{i,j}(k*numADC),fc);
+            phase_3 = phase(t_onePulse-delays_tar3{i,j}(k*numADC),fc);
             
             signal_t((k-1)*numADC+1:k*numADC) = exp(1j*phase_t);
             signal_1((k-1)*numADC+1:k*numADC) = exp(1j*(phase_t - phase_1));
             signal_2((k-1)*numADC+1:k*numADC) = exp(1j*(phase_t - phase_2));
+            signal_3((k-1)*numADC+1:k*numADC) = exp(1j*(phase_t - phase_3));
         end
-        mixed{i,j} = signal_1 + signal_2;
+        mixed{i,j} = signal_1 + signal_2 + signal_3;
     end
 end
 
@@ -198,6 +224,7 @@ rangeFFT = fft(RDC(:,1:numChirps,:),N_range);
 
 angleFFT = fftshift(fft(rangeFFT,length(ang_ax),3),3);
 range_az = squeeze(sum(angleFFT,2)); % range-azimuth map
+range_az = flip(range_az,2);
 
 figure
 colormap(jet)
@@ -270,6 +297,7 @@ scatter3(coor2(1),coor2(2),coor2(3),100,'b','filled','linewidth',9)
 xlabel('Range (m) X')
 ylabel('Range (m) Y')
 zlabel('Range (m) Z')
+
 %% MUSIC Range-AoA map
 rangeFFT = fft(RDC);
 for i = 1:N_range
