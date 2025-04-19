@@ -1,4 +1,4 @@
-# 转载请联系 (sutong.zhang@stu.pku.edu.cn)
+## 转载请联系 (sutong.zhang@stu.pku.edu.cn)
 
 本项目是为了PKU & BJTU大二学生本研轮转而创。
 
